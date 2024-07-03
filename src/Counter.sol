@@ -6,11 +6,15 @@ contract Counter {
         uint256 slotIndex;
         uint256 offset;
         uint256 length;
+        uint numberOfBytes;
     }
 
     struct VariableRecord {
         string variableName;
-        VariableData variableData;
+        uint256 slotIndex;
+        uint256 offset;
+        uint256 length;
+        uint numberOfBytes;
     }
 
     mapping(address => mapping(string => VariableData)) public contracts;
@@ -20,9 +24,20 @@ contract Counter {
         VariableRecord[] memory records
     ) public {
         for (uint256 i = 0; i < records.length; i++) {
-            contracts[contractAddress][records[i].variableName] = records[i]
-                .variableData;
+            contracts[contractAddress][records[i].variableName] = VariableData(
+                records[i].slotIndex,
+                records[i].offset,
+                records[i].length,
+                records[i].numberOfBytes
+            );
         }
+    }
+
+    function getRecord(
+        address contractAddress,
+        string memory variableName
+    ) public view returns (VariableData memory) {
+        return contracts[contractAddress][variableName];
     }
 
     function computePrimitiveSlot(
@@ -49,7 +64,7 @@ contract Counter {
     //     string calldata key
     // ) public view returns (uint) {
     //     VariableData memory data = contracts[contractAddress][key];
-    //      uint256 slotIndex = data.slotIndex;
+    //     uint256 slotIndex = data.slotIndex;
     //     uint256 offset = data.offset;
     //     uint256 length = data.length;
 
