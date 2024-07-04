@@ -108,21 +108,4 @@ contract Counter {
 
         return data;
     }
-
-    // function computePackedArraySlot(
-    //     uint baseSlot,
-    //     uint index,
-    //     uint elementSize
-    // ) public pure returns (uint) {
-    //     uint elementsPerSlot = 32 / elementSize;
-    //     return baseSlot + (index / elementsPerSlot);
-    // }
-
-    // function computePackedArrayOffset(
-    //     uint index,
-    //     uint elementSize
-    // ) public pure returns (uint) {
-    //     uint elementsPerSlot = 32 / elementSize;
-    //     return (index % elementsPerSlot) * elementSize;
-    // }
 }
