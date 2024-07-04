@@ -18,6 +18,7 @@ contract Counter {
     }
 
     mapping(address => mapping(string => VariableData)) public contracts;
+    mapping(address => mapping(string => bool)) private exists;
 
     function addRecords(
         address contractAddress,
@@ -30,6 +31,7 @@ contract Counter {
                 records[i].length,
                 records[i].numberOfBytes
             );
+            exists[contractAddress][records[i].variableName] = true;
         }
     }
 
@@ -37,6 +39,10 @@ contract Counter {
         address contractAddress,
         string memory variableName
     ) public view returns (VariableData memory) {
+        require(
+            exists[contractAddress][variableName],
+            "Variable name does not exist for the given contract address."
+        );
         return contracts[contractAddress][variableName];
     }
 
@@ -47,29 +53,48 @@ contract Counter {
         return contracts[contractAddress][key];
     }
 
+    function computeFixedArraySlot(
+        address contractAddress,
+        string calldata key,
+        uint index
+    ) public view returns (VariableData memory) {
+        require(exists[contractAddress][key], "Variable does not exist");
+        VariableData memory data = contracts[contractAddress][key];
+
+        uint256 elementsPerSlot = 32 / data.numberOfBytes;
+        uint256 slotOffset = index / elementsPerSlot;
+        uint256 indexInSlot = index % elementsPerSlot;
+
+        data.slotIndex += slotOffset;
+        data.offset = indexInSlot * data.numberOfBytes;
+
+        return data;
+    }
+
     // function computeFixedArraySlot(
     //     address contractAddress,
-    //     string calldata key
-    // ) public view returns (uint) {
-    //     VariableData memory data = contracts[contractAddress][key];
-    //      uint256 slotIndex = data.slotIndex;
-    //     uint256 offset = data.offset;
-    //     uint256 length = data.length;
-
-    //     // return baseSlot + index;
-    // }
-
-    // function computeDynamicArrayElementSlot(
-    //     address contractAddress,
-    //     string calldata key
-    // ) public view returns (uint) {
+    //     string calldata key,
+    //     uint index
+    // ) public view returns (VariableData memory) {
     //     VariableData memory data = contracts[contractAddress][key];
     //     uint256 slotIndex = data.slotIndex;
-    //     uint256 offset = data.offset;
-    //     uint256 length = data.length;
 
-    //     return uint(keccak256(abi.encodePacked(baseSlot))) + index;
+    //     data.slotIndex = slotIndex + index;
+    //     return data;
     // }
+
+    function computeDynamicArrayElementSlot(
+        address contractAddress,
+        string calldata key,
+        uint index
+    ) public view returns (VariableData memory) {
+        VariableData memory data = contracts[contractAddress][key];
+        uint256 slotIndex = data.slotIndex;
+
+        data.slotIndex = uint(keccak256(abi.encodePacked(slotIndex))) + index;
+
+        return data;
+    }
 
     function computeMappingSlot(
         address contractAddress,
